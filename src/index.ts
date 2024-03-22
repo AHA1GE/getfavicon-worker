@@ -25,8 +25,14 @@ export default {
 };
 
 async function handleRequest(request: Request): Promise<Response> {
-    let params = await convertParam(new URL(request.url));
-    try {//fallback to use google api
+    let params;
+    try {
+        params = await convertParam(new URL(request.url));
+    } catch (error) {
+        return new Response("param error: " + error, { status: 400, headers: { "Content-Type": "text/plain" } });
+    }
+
+    try {
         const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
         const queryParams = new URLSearchParams({
             client: 'chrome_desktop',
@@ -39,19 +45,26 @@ async function handleRequest(request: Request): Promise<Response> {
         });
         const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
         const googleResponse = await fetch(googleApiUrl);
+
         if (googleResponse.ok) {
-            //return Response.redirect(googleApiUrl, 307);
+            const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
+            if (!contentType.startsWith("image/")) {
+                throw new Error("Invalid Content-Type received for favicon");
+            }
             const iconData = await googleResponse.arrayBuffer();
-            return new Response(iconData, {
-                headers: { "Content-Type": googleResponse.headers.get("Content-Type") || "image/x-icon" },
-            });
-        } else if (googleResponse.status === 404) {
-            return Response.redirect(googleApiUrl, 307);
+            return new Response(iconData, { headers: { "Content-Type": contentType } });
         } else {
-            return Response.redirect("https://he.net/favicon.ico", 307);
-            // return Response.redirect(googleApiUrl, 307);
+            switch (googleResponse.status) {
+                case 404:
+                    return Response.redirect("https://he.net/favicon.ico", 307);
+                default:
+                    // Log the error for debugging purposes
+                    console.error(`Error fetching favicon: ${googleResponse.status}`);
+                    return new Response("Error fetching favicon", { status: 502, headers: { "Content-Type": "text/plain" } });
+            }
         }
     } catch (e) {
+        console.error(`Failed to fetch favicon for ${params.targetUrl}: ${e}`);
         return new Response(
             `Failed to fetch favicon for ${params.targetUrl}: ${e}`,
             { status: 500, headers: { "Content-Type": "text/plain" } },
