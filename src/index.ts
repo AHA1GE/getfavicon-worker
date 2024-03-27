@@ -97,3 +97,83 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
 
     return { targetSize, targetUrl };
 }
+
+/** Fetches the favicon from page specified url.
+    * @param targetSize The desired size of the favicon.
+    * @param targetUrl The URL of the page to fetch the favicon from.
+    * @returns The fetched favicon as Response.
+    * @throws If the target page cannot be fetched, is not an HTML document, or does not contain a valid favicon.
+    */
+async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise<Response> {
+    // Fetch the target page and extract the favicon URL.
+    const responsePage = await fetch(targetUrl.toString());
+    if (!responsePage.ok) {
+        throw new Error(`Failed to fetch target page: ${responsePage.status}`);
+    } else if (!responsePage.headers.get("Content-Type")?.startsWith("text/html")) {
+        throw new Error("Target page is not an HTML document");
+    } else {
+        //proceed
+    }
+
+    // Parse the response as HTML.
+    const html = await responsePage.text();
+
+    // Look for favicon links in the HTML.
+    //      1. look for all elemnts that provide favicon or apple-touch-icon, like <link rel="icon" href="favicon.ico">. If not found, throw an error.
+    //      2. process each link: if the link is relative we need to convert them to absolute URL use the targetUrl. If the link is already absolute, keep it as is.
+    //      3. save the processed URL in faviconUrlList: string[]. If no valid URL found, throw an error.
+    const linkRegex = /<link\s+(?:[^>]*?\s+)?rel=["'](icon|shortcut icon|apple-touch-icon|apple-touch-icon-precomposed|apple-touch-startup-image)["'][^>]*?>/gi;
+    let match;
+    const faviconUrlList = [];
+    while ((match = linkRegex.exec(html)) !== null) {
+        const hrefRegex = /href=["']([^"']+)["']/i;
+        const hrefMatch = hrefRegex.exec(match[0]);
+        if (hrefMatch && hrefMatch[1]) {
+            const faviconUrl = new URL(hrefMatch[1], targetUrl).toString();
+            faviconUrlList.push(faviconUrl);
+        }
+    }
+    if (faviconUrlList.length === 0) {
+        throw new Error("No favicon link found");
+    } else {
+        return fetchFirstValidFavicon(faviconUrlList)
+    }
+}
+
+/**
+ * fetch the first valid favicon from the list of URLs
+ * @param faviconUrlList 
+ * @returns the first valid favicon as Response
+ * @throws if no valid favicon found
+ */
+async function fetchFirstValidFavicon(faviconUrlList: string[]) {
+    // Use promise.all to fetch all favicon URLs concurrently. The first successful response will be returned.
+    //      1. Use Promise.all to fetch all favicon URLs concurrently.
+    //      2. If any response is a valid image, return the image as a Response. And stop fetching the rest.
+    //      3. If all responses are invalid or failed, throw an error.
+
+    // Wrap each fetch call in a promise that resolves for both success and failure cases
+    const fetchPromises = faviconUrlList.map(url =>
+        fetch(url).then(response => {
+            // Check if the response is OK and the content type is an image
+            if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
+                // Return the valid image response
+                return response;
+            }
+            // If response is not OK or not an image, throw to indicate this fetch should not be considered
+            throw new Error("Invalid image or fetch failed");
+        }).catch(error => {
+            // Catch any network errors and re-throw to handle them as invalid fetch attempts
+            throw error;
+        })
+    );
+
+    try {
+        // Use Promise.any to return the first fulfilled promise, ignoring rejected ones until one resolves
+        const firstValidImage = await Promise.any(fetchPromises);
+        return firstValidImage;
+    } catch (error) {
+        // If all promises are rejected, Promise.any will throw an AggregateError
+        throw new Error("No valid favicon found");
+    }
+}
