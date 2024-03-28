@@ -34,12 +34,13 @@ export default {
  */
 async function handleRequest(request: Request): Promise<Response> {
     let params;
+    const defaultIconUrl = new URL(request.url).origin + "/default";
     try { // convert param
         params = await convertParam(new URL(request.url));
     } catch (error) {
         console.error("param error: " + error);
         // If the parameters are invalid, redirect to the default icon.
-        return Response.redirect("/default", 307);
+        return Response.redirect(defaultIconUrl, 307);
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
@@ -53,7 +54,7 @@ async function handleRequest(request: Request): Promise<Response> {
     }
     // If all attempts failed, redirect to google api.
     console.error("All attempts failed, redirect to default icon.");
-    return Response.redirect("/default", 307);
+    return Response.redirect(defaultIconUrl, 307);
 }
 
 async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: URL }> {
