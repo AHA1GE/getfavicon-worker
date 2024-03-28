@@ -106,13 +106,14 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             }
         } else {
             if (googleResponse.status === 404) {
-                // ERROR: The favicon was not found. Return a redirect to the default icon.
-                console.error(`google favicon api 404 for ${targetUrl}, redirecting user to default favicon.`);
-                return Response.redirect("https://he.net/favicon.ico", 307);
+                // ERROR: The favicon was not found. 
+                console.error(`google favicon api 404 for ${targetUrl}.`);
+                throw new Error(`google favicon api 404 for ${targetUrl}.`);
+                // return Response.redirect("https://he.net/favicon.ico", 307);
             } else {
                 // ERROR: Log the error for debugging purposes
-                console.error(`Google api status: ${googleResponse.status}.`);
-                throw new Error(`Google api status: ${googleResponse.status}.`);
+                console.error(`Google api error, status: ${googleResponse.status}.`);
+                throw new Error(`Google api error, status: ${googleResponse.status}.`);
             }
 
         }
