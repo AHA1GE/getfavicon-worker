@@ -41,14 +41,15 @@ async function handleRequest(request: Request): Promise<Response> {
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
     } catch (error) {
-        console.error("fetch Icon Use Google Api error: " + error);
+        console.warn("fetch Icon Use Google Api error: " + error);
     }
     try { // fetch favicon from page
         return await fetchFaviconFromPage(params.targetSize, params.targetUrl);
     } catch (error) {
-        console.error("fetch Favicon From Page error: " + error);
+        console.warn("fetch Favicon From Page error: " + error);
     }
     // If all attempts failed, redirect to the default icon.
+    console.error("All attempts failed, redirect to default icon.");
     return Response.redirect(defaultIconUrl, 307);
 }
 
@@ -101,24 +102,24 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
                 return new Response(iconData, { headers: { "Content-Type": contentType } });
             } else {
                 // ERROR: Log the error for debugging purposes
-                console.error(`Invalid Content-Type received for favicon: ${contentType}`);
+                // console.error(`Invalid Content-Type received for favicon: ${contentType}`);
                 throw new Error(`Invalid Content-Type received for favicon: ${contentType}`);
             }
         } else {
             if (googleResponse.status === 404) {
                 // ERROR: The favicon was not found. 
-                console.error(`google favicon api 404 for ${targetUrl}.`);
-                throw new Error(`google favicon api 404 for ${targetUrl}.`);
+                console.error(`google favicon api 404.`);
+                throw new Error(`google favicon api 404.`);
                 // return Response.redirect("https://he.net/favicon.ico", 307);
             } else {
                 // ERROR: Log the error for debugging purposes
-                console.error(`Google api error, status: ${googleResponse.status}.`);
+                // console.error(`Google api error, status: ${googleResponse.status}.`);
                 throw new Error(`Google api error, status: ${googleResponse.status}.`);
             }
 
         }
     } catch (e) {
-        console.error(`Failed to fetch favicon for ${targetUrl}: ${e}`);
+        // console.error(`Failed to fetch favicon for ${targetUrl}: ${e}`);
         throw new Error(`Failed to fetch favicon for ${targetUrl}: ${e}`);
     }
 }
@@ -146,11 +147,11 @@ function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
     */
 async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise<Response> {
     // Fetch the target page and extract the favicon URL.
-    const responsePage = await fetch(targetUrl.toString());
+    const responsePage = await fetch(targetUrl.toString(), { redirect: "follow" });
     if (!responsePage.ok) {
-        throw new Error(`Failed to fetch target page: ${responsePage.status}`);
+        throw new Error(`Failed to fetch target page, status: ${responsePage.status}`);
     } else if (!responsePage.headers.get("Content-Type")?.startsWith("text/html")) {
-        throw new Error("Target page is not an HTML document");
+        throw new Error("Target page is not an HTML document, type:" + responsePage.headers.get("Content-Type") || "unknown");
     } else {
         //proceed
     }
@@ -174,6 +175,7 @@ async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise
         }
     }
     if (faviconUrlList.length === 0) {
+        console.warn("No favicon link found, the page text 0-200: " + html.slice(0, 200) + "...");
         throw new Error("No favicon link found");
     } else {
         return fetchFaviconUrlList(faviconUrlList)
@@ -201,6 +203,7 @@ async function fetchFaviconUrlList(faviconUrlList: string[]) {
                 return response;
             }
             // If response is not OK or not an image, throw to indicate this fetch should not be considered
+            console.warn(`Fetch failed: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`);
             throw new Error("Invalid image or fetch failed");
         }).catch(error => {
             // Catch any network errors and re-throw to handle them as invalid fetch attempts
@@ -214,6 +217,6 @@ async function fetchFaviconUrlList(faviconUrlList: string[]) {
         return firstValidImage;
     } catch (error) {
         // If all promises are rejected, Promise.any will throw an AggregateError
-        throw new Error("No valid favicon found");
+        throw new Error("No valid favicon found, either paage has no link or all fetches failed");
     }
 }
