@@ -16,59 +16,32 @@ export interface Env {
 }
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-        console.log("Got a request", request);
-        console.log("Got a env", env);
-        console.log("Got a ctx", ctx);
+        // console.log("Got a request", request);
+        // console.log("Got a env", env);
+        // console.log("Got a ctx", ctx);
         return handleRequest(request);
     },
 
 };
-
+/**
+ * @param request 
+ * @returns icon file if success, otherwise redirect to google api, if error, redirect to he.net/favicon.ico
+ */
 async function handleRequest(request: Request): Promise<Response> {
     let params;
     try {
         params = await convertParam(new URL(request.url));
     } catch (error) {
-        return new Response("param error: " + error, { status: 400, headers: { "Content-Type": "text/plain" } });
+        // return new Response("param error: " + error, { status: 400, headers: { "Content-Type": "text/plain" } });
+        console.error("param error: " + error);
+        return Response.redirect("https://he.net/favicon.ico", 307);
     }
-
     try {
-        const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
-        const queryParams = new URLSearchParams({
-            client: 'chrome_desktop',
-            nfrp: '2',
-            check_seen: 'true',
-            size: params.targetSize,
-            min_size: '16',
-            max_size: '256',
-            url: params.targetUrl.toString(),
-        });
-        const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
-        const googleResponse = await fetch(googleApiUrl);
-
-        if (googleResponse.ok) {
-            const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
-            if (!contentType.startsWith("image/")) {
-                throw new Error("Invalid Content-Type received for favicon");
-            }
-            const iconData = await googleResponse.arrayBuffer();
-            return new Response(iconData, { headers: { "Content-Type": contentType } });
-        } else {
-            switch (googleResponse.status) {
-                case 404:
-                    return Response.redirect("https://he.net/favicon.ico", 307);
-                default:
-                    // Log the error for debugging purposes
-                    console.error(`Error fetching favicon: ${googleResponse.status}`);
-                    return new Response("Error fetching favicon", { status: 502, headers: { "Content-Type": "text/plain" } });
-            }
-        }
-    } catch (e) {
-        console.error(`Failed to fetch favicon for ${params.targetUrl}: ${e}`);
-        return new Response(
-            `Failed to fetch favicon for ${params.targetUrl}: ${e}`,
-            { status: 500, headers: { "Content-Type": "text/plain" } },
-        );
+        const iconResponse = await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
+        return iconResponse;
+    } catch (error) {
+        console.error("fetch Icon Use Google Api error: " + error);
+        return redirectToGoogleApi(params.targetSize, params.targetUrl);
     }
 }
 
@@ -95,5 +68,75 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
         throw new Error('Invalid "url" parameter');
     }
 
+    // Trim targetUrl to leave only domain
+    targetUrl.pathname = "";
+    targetUrl.search = "";
+    targetUrl.hash = "";
+
+    // Validate targetUrl's domain to prevent loop
+    if (targetUrl.hostname === url.hostname) {
+        throw new Error('Invalid "url" parameter');
+    }
+
     return { targetSize, targetUrl };
+}
+
+async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
+    try {
+        // Fetch the favicon from Google's API.
+        const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
+        const queryParams = new URLSearchParams({
+            client: 'chrome_desktop',
+            nfrp: '2',
+            check_seen: 'true',
+            size: targetSize,
+            min_size: '16',
+            max_size: '256',
+            url: targetUrl.toString(),
+        });
+        const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
+        const googleResponse = await fetch(googleApiUrl);
+
+        if (googleResponse.ok) {
+            const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
+            if (contentType.startsWith("image/")) {
+                // SUCCESS: Return the fetched icon.
+                const iconData = await googleResponse.arrayBuffer();
+                return new Response(iconData, { headers: { "Content-Type": contentType } });
+            } else {
+                // ERROR: Log the error for debugging purposes
+                console.error(`Invalid Content-Type received for favicon: ${contentType}`);
+                throw new Error(`Invalid Content-Type received for favicon: ${contentType}`);
+            }
+        } else {
+            if (googleResponse.status === 404) {
+                // ERROR: The favicon was not found. Return a redirect to the default icon.
+                console.error(`google favicon api 404 for ${targetUrl}, redirecting user to default favicon.`);
+                return Response.redirect("https://he.net/favicon.ico", 307);
+            } else {
+                // ERROR: Log the error for debugging purposes
+                console.error(`Google api status: ${googleResponse.status}.`);
+                throw new Error(`Google api status: ${googleResponse.status}.`);
+            }
+
+        }
+    } catch (e) {
+        console.error(`Failed to fetch favicon for ${targetUrl}: ${e}`);
+        throw new Error(`Failed to fetch favicon for ${targetUrl}: ${e}`);
+    }
+}
+
+async function redirectToGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
+    const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
+    const queryParams = new URLSearchParams({
+        client: 'chrome_desktop',
+        nfrp: '2',
+        check_seen: 'true',
+        size: targetSize,
+        min_size: '16',
+        max_size: '256',
+        url: targetUrl.toString(),
+    });
+    const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
+    return Response.redirect(googleApiUrl, 307);
 }
