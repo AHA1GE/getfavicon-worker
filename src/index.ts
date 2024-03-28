@@ -24,25 +24,32 @@ export default {
 
 };
 /**
+ * Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
  * @param request 
- * @returns icon file if success, otherwise redirect to google api, if error, redirect to he.net/favicon.ico
+ * @returns icon file if success, otherwise redirect, if error redirect to default favicon.ico
  */
+const defaultIconUrl = "https://he.net/favicon.ico";
 async function handleRequest(request: Request): Promise<Response> {
     let params;
-    try {
+    try { // convert param
         params = await convertParam(new URL(request.url));
     } catch (error) {
-        // return new Response("param error: " + error, { status: 400, headers: { "Content-Type": "text/plain" } });
         console.error("param error: " + error);
-        return Response.redirect("https://he.net/favicon.ico", 307);
+        // If the parameters are invalid, redirect to the default icon.
+        return Response.redirect(defaultIconUrl, 307);
     }
-    try {
-        const iconResponse = await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
-        return iconResponse;
+    try { // fetch icon use google api
+        return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
     } catch (error) {
         console.error("fetch Icon Use Google Api error: " + error);
-        return redirectToGoogleApi(params.targetSize, params.targetUrl);
     }
+    try { // fetch favicon from page
+        return await fetchFaviconFromPage(params.targetSize, params.targetUrl);
+    } catch (error) {
+        console.error("fetch Favicon From Page error: " + error);
+    }
+    // If all attempts failed, redirect to the default icon.
+    return Response.redirect(defaultIconUrl, 307);
 }
 
 async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: URL }> {
@@ -84,18 +91,7 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     try {
         // Fetch the favicon from Google's API.
-        const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
-        const queryParams = new URLSearchParams({
-            client: 'chrome_desktop',
-            nfrp: '2',
-            check_seen: 'true',
-            size: targetSize,
-            min_size: '16',
-            max_size: '256',
-            url: targetUrl.toString(),
-        });
-        const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
-        const googleResponse = await fetch(googleApiUrl);
+        const googleResponse = await fetch(constructGoogleApiUrl(targetSize, targetUrl));
 
         if (googleResponse.ok) {
             const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
@@ -126,7 +122,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
     }
 }
 
-async function redirectToGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
+function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
     const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
     const queryParams = new URLSearchParams({
         client: 'chrome_desktop',
@@ -138,7 +134,7 @@ async function redirectToGoogleApi(targetSize: string, targetUrl: URL): Promise<
         url: targetUrl.toString(),
     });
     const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
-    return Response.redirect(googleApiUrl, 307);
+    return googleApiUrl
 }
 
 /** Fetches the favicon from page specified url.
@@ -179,7 +175,7 @@ async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise
     if (faviconUrlList.length === 0) {
         throw new Error("No favicon link found");
     } else {
-        return fetchFirstValidFavicon(faviconUrlList)
+        return fetchFaviconUrlList(faviconUrlList)
     }
 }
 
@@ -189,9 +185,9 @@ async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise
  * @returns the first valid favicon as Response
  * @throws if no valid favicon found
  */
-async function fetchFirstValidFavicon(faviconUrlList: string[]) {
-    // Use promise.all to fetch all favicon URLs concurrently. The first successful response will be returned.
-    //      1. Use Promise.all to fetch all favicon URLs concurrently.
+async function fetchFaviconUrlList(faviconUrlList: string[]) {
+    // Use promise.any to fetch all favicon URLs concurrently. The first successful response will be returned.
+    //      1. Use Promise.any to fetch all favicon URLs concurrently.
     //      2. If any response is a valid image, return the image as a Response. And stop fetching the rest.
     //      3. If all responses are invalid or failed, throw an error.
 
