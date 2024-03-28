@@ -16,17 +16,21 @@ export interface Env {
 }
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-        // console.log("Got a request", request);
-        // console.log("Got a env", env);
-        // console.log("Got a ctx", ctx);
-        return handleRequest(request);
+        // Parse the request.
+        const url = new URL(request.url);
+        // switch path
+        if (url.pathname === "/default") {
+            return defaultSvgicon();
+        } else {
+            return handleRequest(request);
+        }
     },
 
 };
 /**
  * Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
  * @param request 
- * @returns icon file if success, otherwise redirect, if error rturn to defaulticon
+ * @returns icon file if success, otherwise redirect, if error redirect to default icon
  */
 async function handleRequest(request: Request): Promise<Response> {
     let params;
@@ -35,7 +39,7 @@ async function handleRequest(request: Request): Promise<Response> {
     } catch (error) {
         console.error("param error: " + error);
         // If the parameters are invalid, redirect to the default icon.
-        return defaultSvgicon();
+        return Response.redirect("/default", 307);
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
@@ -48,8 +52,8 @@ async function handleRequest(request: Request): Promise<Response> {
         console.warn("fetch Favicon From Page failed: " + error);
     }
     // If all attempts failed, redirect to google api.
-    console.error("All attempts failed, redirect to google api.");
-    return Response.redirect(constructGoogleApiUrl(params.targetSize, params.targetUrl), 307);
+    console.error("All attempts failed, redirect to default icon.");
+    return Response.redirect("/default", 307);
 }
 
 async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: URL }> {
