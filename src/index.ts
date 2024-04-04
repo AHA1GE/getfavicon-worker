@@ -14,6 +14,7 @@ export interface Env {
     // Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
     // MY_QUEUE: Queue;
 }
+
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         // Parse the request.
@@ -27,8 +28,8 @@ export default {
     },
 
 };
-/**
- * Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
+
+/** Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
  * @param request 
  * @returns icon file if success, otherwise redirect, if error redirect to default icon
  */
@@ -80,8 +81,8 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
         throw new Error('Invalid "url" parameter');
     }
 
-    // Trim targetUrl to leave only domain
-    targetUrl.pathname = "";
+    // Trim targetUrl
+    // Do not trim pathname beacuse different page in same site may have different favicon
     targetUrl.search = "";
     targetUrl.hash = "";
 
@@ -191,8 +192,7 @@ async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise
     }
 }
 
-/**
- * fetch the first valid favicon from the list of URLs
+/** Fetch the first valid favicon from the list of URLs
  * @param faviconUrlList 
  * @returns the first valid favicon as Response
  * @throws if no valid favicon found
