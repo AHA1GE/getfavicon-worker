@@ -53,6 +53,11 @@ async function handleRequest(request: Request): Promise<Response> {
     } catch (error) {
         console.warn("fetch Favicon From Page failed: " + error);
     }
+    try { // fetch icon use icon horse
+        return await fetchIconUseIconHorse(params.targetUrl);
+    } catch (error) {
+        console.error("fetch Icon Use Icon Horse failed: " + error);
+    }
     // If all attempts failed, redirect to google api.
     console.error("All attempts failed, redirect to default icon.");
     return Response.redirect(defaultIconUrl, 307);
@@ -96,20 +101,15 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
 
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
-        // const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
-        // const queryParams = new URLSearchParams({
-        //     client: 'chrome_desktop',
-        //     nfrp: '2',
-        //     check_seen: 'true',
-        //     size: targetSize,
-        //     min_size: '16',
-        //     max_size: '256',
-        //     url: targetUrl.toString(),
-        // });
-        const googleApiBaseUrl = "https://icon.horse/icon/";
+        const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
         const queryParams = new URLSearchParams({
-            // size: targetSize,
-            uri: targetUrl.toString(),
+            client: 'chrome_desktop',
+            nfrp: '2',
+            check_seen: 'true',
+            size: targetSize,
+            min_size: '16',
+            max_size: '256',
+            url: targetUrl.toString(),
         });
         const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
         return googleApiUrl
@@ -150,11 +150,8 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
         } else {
             return new Response(constructGoogleApiUrl(targetSize, targetUrl), { status: 307 })
         }
-
     }
 }
-
-
 
 /** Fetches the favicon from page specified url.
     * @param targetSize The desired size of the favicon.
@@ -235,6 +232,48 @@ async function fetchFaviconUrlList(faviconUrlList: string[]) {
         // If all promises are rejected, Promise.any will throw an AggregateError
         throw new Error("No valid favicon found, all fetches failed");
     }
+}
+
+async function fetchIconUseIconHorse(targetUrl: URL) {
+    const iconHorseApiBaseUrl = "https://icon.horse/icon/";
+    const queryParams = new URLSearchParams({
+        // size: targetSize,
+        uri: targetUrl.toString(),
+    });
+    const iconHorseApiUrl = `${iconHorseApiBaseUrl}?${queryParams}`;
+    try {
+        const iconHorseResponse = await fetch(iconHorseApiUrl);
+        if (iconHorseResponse.ok) {
+            const contentType = iconHorseResponse.headers.get("Content-Type") || "image/x-icon";
+            if (contentType.startsWith("image/")) {
+                // SUCCESS: Return the fetched icon.
+                const iconData = await iconHorseResponse.arrayBuffer();
+                return new Response(iconData, { headers: { "Content-Type": contentType } });
+            } else {
+                // ERROR: Log the error for debugging purposes
+                // console.error(`Invalid Content-Type received for favicon: ${contentType}`);
+                throw new Error(`Invalid Content-Type received for favicon: ${contentType}`);
+            }
+        } else {
+            if (iconHorseResponse.status === 404) {
+                // ERROR: The favicon was not found. 
+                // console.error(`google favicon api 404.`);
+                throw 404;
+                // return Response.redirect("https://he.net/favicon.ico", 307);
+            } else {
+                // ERROR: Log the error for debugging purposes
+                // console.error(`Google api error, status: ${googleResponse.status}.`);
+                throw new Error(`Google api error, status: ${iconHorseResponse.status}.`);
+            }
+        }
+    } catch (e) {
+        if (e === 404) {
+            throw new Error(`Failed for ${targetUrl}: 404 not found.`);
+        } else {
+            return new Response(iconHorseApiUrl, { status: 307 })
+        }
+    }
+
 }
 
 async function defaultSvgicon() {
