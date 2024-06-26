@@ -40,9 +40,8 @@ async function defaultSvgicon() {
   </svg>`;
 
     const headers = {
-        'Content-Type': 'image/svg+xml',
-        // Cache for 1 hr
-        'Cache-Control': 'public, max-age=3600',
+        'Content-Type': 'image/svg+xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=604800, immutable',
     };
 
     return new Response(svgContent, {
@@ -62,6 +61,8 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
         newHeaders.delete("X-UA-Compatible");
         newHeaders.delete("X-WebKit-CSP");
         newHeaders.delete("X-XSS-Protection");
+        // remove expires header since cache-control is set
+        newHeaders.delete("Expires");
         return newHeaders;
     } catch (e) {
         throw new Error(e as string);
