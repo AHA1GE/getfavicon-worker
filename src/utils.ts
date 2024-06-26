@@ -51,4 +51,21 @@ async function defaultSvgicon() {
     });
 }
 
-export { convertParam, defaultSvgicon };
+async function modifyHeaders(headers: Headers): Promise<Headers> {
+    try {
+        const newHeaders = new Headers(headers);
+        // set cache polocies
+        newHeaders.set("Cache-Control", "public, max-age=604800, immutable");
+        // remove unneeded http(html) headers: Content-Security-Policy, X-Content-Security-Policy, X-UA-Compatible, X-WebKit-CSP, X-XSS-Protection
+        newHeaders.delete("Content-Security-Policy");
+        newHeaders.delete("X-Content-Security-Policy");
+        newHeaders.delete("X-UA-Compatible");
+        newHeaders.delete("X-WebKit-CSP");
+        newHeaders.delete("X-XSS-Protection");
+        return newHeaders;
+    } catch (e) {
+        throw new Error(e as string);
+    }
+}
+
+export { convertParam, defaultSvgicon, modifyHeaders };

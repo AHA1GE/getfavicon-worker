@@ -1,3 +1,5 @@
+import { modifyHeaders } from "../utils";
+
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
         const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
@@ -23,9 +25,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             if (contentType.startsWith("image/")) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await googleResponse.arrayBuffer();
-                const headers = new Headers(await googleResponse.headers);
-                // set cache polocies
-                headers.set("Cache-Control", "public, max-age=604800, immutable");
+                const headers = await modifyHeaders(await googleResponse.headers)
                 return new Response(iconData, { headers });
             } else {
                 // ERROR: Log the error for debugging purposes

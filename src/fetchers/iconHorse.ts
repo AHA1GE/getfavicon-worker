@@ -1,3 +1,5 @@
+import { modifyHeaders } from "../utils";
+
 async function fetchIconUseIconHorse(targetUrl: URL) {
     const iconHorseApiBaseUrl = "https://icon.horse/icon/";
     const queryParams = new URLSearchParams({
@@ -12,7 +14,7 @@ async function fetchIconUseIconHorse(targetUrl: URL) {
             if (contentType.startsWith("image/")) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await iconHorseResponse.arrayBuffer();
-                const headers = new Headers(await iconHorseResponse.headers);
+                const headers = await modifyHeaders(await iconHorseResponse.headers)
                 // set cache polocies
                 headers.set("Cache-Control", "public, max-age=604800, immutable");
                 return new Response(iconData, { headers });

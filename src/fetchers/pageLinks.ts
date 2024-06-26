@@ -1,3 +1,5 @@
+import { modifyHeaders } from "../utils";
+
 /**
  * Fetches the favicon from the page specified by the URL.
  * @param targetSize The desired size of the favicon.
@@ -53,10 +55,7 @@ async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> 
     const fetchPromises = faviconUrlList.map(url =>
         fetch(url).then(response => {
             if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-                const headers = new Headers(response.headers);
-                // set cache polocies
-                headers.set("Cache-Control", "public, max-age=604800, immutable");
-                return new Response(response.body, { headers });
+                modifyHeaders(response.headers).then(headers => { return new Response(response.body, { headers }); });
             }
             console.warn(`Fetch failed: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`);
             throw new Error(`Invalid image or fetch failed for URL: ${url}`);
