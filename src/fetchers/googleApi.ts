@@ -23,7 +23,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             if (contentType.startsWith("image/")) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await googleResponse.arrayBuffer();
-                const headers = await googleResponse.headers;
+                const headers = new Headers(await googleResponse.headers);
                 // set cache polocies
                 headers.set("Cache-Control", "public, max-age=604800, immutable");
                 return new Response(iconData, { headers });

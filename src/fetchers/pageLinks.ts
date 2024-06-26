@@ -53,7 +53,7 @@ async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> 
     const fetchPromises = faviconUrlList.map(url =>
         fetch(url).then(response => {
             if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-                const headers = response.headers;
+                const headers = new Headers(response.headers);
                 // set cache polocies
                 headers.set("Cache-Control", "public, max-age=604800, immutable");
                 return new Response(response.body, { headers });
