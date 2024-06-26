@@ -23,7 +23,10 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             if (contentType.startsWith("image/")) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await googleResponse.arrayBuffer();
-                return new Response(iconData, { headers: { "Content-Type": contentType } });
+                const headers = await googleResponse.headers;
+                // set cache polocies
+                headers.set("Cache-Control", "public, max-age=604800, immutable");
+                return new Response(iconData, { headers });
             } else {
                 // ERROR: Log the error for debugging purposes
                 // console.error(`Invalid Content-Type received for favicon: ${contentType}`);

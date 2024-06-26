@@ -53,7 +53,10 @@ async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> 
     const fetchPromises = faviconUrlList.map(url =>
         fetch(url).then(response => {
             if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-                return response;
+                const headers = response.headers;
+                // set cache polocies
+                headers.set("Cache-Control", "public, max-age=604800, immutable");
+                return new Response(response.body, { headers });
             }
             console.warn(`Fetch failed: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`);
             throw new Error(`Invalid image or fetch failed for URL: ${url}`);
