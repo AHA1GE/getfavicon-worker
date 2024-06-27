@@ -27,14 +27,26 @@ function extractParamsFromPath(url: URL): { extractedSize: string; extractedUrl:
     const path = url.pathname.split("/").filter((x) => x !== "");
     if (path.length === 0) {
         throw new Error('Missing "url" parameter from path');
-    } else if (path[0] !== "url") {
-        throw new Error('Invalid path format, missing "url" parameter');
     } else if (path.length === 1) {
         throw new Error('Missing "url" parameter from path');
     }
+    let urlFromPath;
+    let sizeFromPath;
 
-    const sizeFromPath = path[path.length - 1];
-    const urlFromPath = path[1];
+    if (path[0] === "url") {
+        // url first, set url index to 1
+        urlFromPath = path[1];
+        sizeFromPath = path[path.length - 1] || "32";
+    } else if ((path[0] === "sz") || (path[0] === "size")) {
+        // size first, set size index to 1
+        sizeFromPath = path[1];
+        if (path[2] !== "url") {
+            throw new Error('Missing "url" parameter from path');
+        }
+        urlFromPath = path[3]
+    } else {
+        throw new Error('Missing "url" parameter from path');
+    }
 
     const { targetSize, targetUrl } = processParams(sizeFromPath, urlFromPath);
 
