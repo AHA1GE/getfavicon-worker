@@ -1,38 +1,85 @@
 async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: URL }> {
+    let targetSize: string;
+    let targetUrl: URL;
 
-    // Get the "sz" parameter and ensure it's a positive integer.
-    let targetSize = url.searchParams.get("sz")?.trim() || "32";
-    const numericSize = parseInt(targetSize, 10);
-    if (isNaN(numericSize) || numericSize <= 0) {
-        targetSize = "32";
+    if (url.search === "") {
+        // Extract parameters from path
+        const { extractedSize, extractedUrl } = extractParamsFromPath(url);
+        targetSize = extractedSize;
+        targetUrl = extractedUrl;
     } else {
-        targetSize = numericSize.toString();
+        // Extract parameters from query parameters
+        const { extractedSize, extractedUrl } = extractParamsFromQuery(url);
+        targetSize = extractedSize;
+        targetUrl = extractedUrl;
     }
 
-    // Validate the "url" parameter.
-    const targetUrlString = url.searchParams.get("url")?.trim();
-    if (!targetUrlString) {
+    // if target url's domain equals to current domain, return 404
+    if (targetUrl.hostname === url.hostname) {
+        throw new Error("Invalid target URL");
+    }
+
+    console.log(`parameters: size=${targetSize}, url=${targetUrl.toString()}`);
+    return { targetSize, targetUrl };
+}
+
+function extractParamsFromPath(url: URL): { extractedSize: string; extractedUrl: URL } {
+    const path = url.pathname.split("/").filter((x) => x !== "");
+    if (path.length === 0) {
+        throw new Error('Missing "url" parameter from path');
+    } else if (path[0] !== "url") {
+        throw new Error('Invalid path format, missing "url" parameter');
+    } else if (path.length === 1) {
+        throw new Error('Missing "url" parameter from path');
+    }
+
+    const sizeFromPath = path[path.length - 1];
+    const urlFromPath = path[1];
+
+    const { targetSize, targetUrl } = processParams(sizeFromPath, urlFromPath);
+
+    return { extractedSize: targetSize, extractedUrl: targetUrl };
+}
+
+function extractParamsFromQuery(url: URL): { extractedSize: string; extractedUrl: URL } {
+    const sizeFromQuery = url.searchParams.get("sz")?.trim() || url.searchParams.get("size")?.trim() || "32";
+    const urlFromQuery = url.searchParams.get("url")?.trim() || "";
+
+    const { targetSize, targetUrl } = processParams(sizeFromQuery, urlFromQuery);
+
+    return { extractedSize: targetSize, extractedUrl: targetUrl };
+}
+
+function processParams(sizeString: string, urlString: string): { targetSize: string; targetUrl: URL } {
+    let size = sizeString;
+    const numericSize = parseInt(size, 10);
+    if (isNaN(numericSize) || numericSize <= 0) {
+        size = "32";
+    } else {
+        size = numericSize.toString();
+    }
+
+    if (!urlString) {
         throw new Error('Missing or empty "url" parameter');
     }
-    let targetUrl;
+
+    let urlObj;
     try {
-        targetUrl = new URL(targetUrlString);
+        // console.log(`Decoding URL: ${urlString}`);
+        urlObj = new URL(decodeURIComponent(urlString));
     } catch (e) {
         throw new Error('Invalid "url" parameter');
     }
 
-    // Trim targetUrl
-    // Do not trim pathname beacuse different page in same site may have different favicon
-    targetUrl.search = "";
-    targetUrl.hash = "";
-
-    // Validate targetUrl's domain to prevent loop
-    if (targetUrl.hostname === url.hostname) {
-        throw new Error('Invalid "url" parameter');
-    }
-
-    return { targetSize, targetUrl };
+    return { targetSize: size, targetUrl: urlObj };
 }
+
+
+
+
+
+
+
 
 async function defaultSvgicon() {
     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-question-square-fill" viewBox="0 0 16 16">
