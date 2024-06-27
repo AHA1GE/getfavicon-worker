@@ -95,8 +95,7 @@ async function defaultSvgicon() {
 
     const headers = new Headers();
     headers.set("Content-Type", "image/svg+xml");
-    // client must revalidate the image every time, since the default icon is not real content, just a fallback
-    headers.set("Cache-Control", "no-store");
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
     return new Response(svgContent, {
         headers: headers,
