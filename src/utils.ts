@@ -36,7 +36,7 @@ function extractParamsFromPath(url: URL): { extractedSize: string; extractedUrl:
     if (path[0] === "url") {
         // url first, set url index to 1
         urlFromPath = path[1];
-        sizeFromPath = path[path.length - 1] || "32";
+        sizeFromPath = path[3] || "32";
     } else if ((path[0] === "sz") || (path[0] === "size")) {
         // size first, set size index to 1
         sizeFromPath = path[1];
