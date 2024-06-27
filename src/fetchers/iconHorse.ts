@@ -23,7 +23,7 @@ async function fetchIconUseIconHorse(targetUrl: URL) {
             throw new Error(`status: ${iconHorseResponse.status}, url: ${iconHorseApiUrl}`);
         }
     } catch (e) {
-        throw new Error(e as string);
+        throw e;
     }
 
 }

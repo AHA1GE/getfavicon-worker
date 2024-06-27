@@ -34,11 +34,27 @@ export default {
 
 };
 
+const totalTimeout = 3; // seconds
+
+async function handleRequest(request: Request): Promise<Response> {
+    const defaultIconUrl = new URL(request.url).origin + "/default";
+    const timeout = new Promise<Response>((resolve) =>
+        setTimeout(() => {
+            console.log(`Redirecting to default icon due to timeout of ${totalTimeout} seconds.`);
+            resolve(Response.redirect(defaultIconUrl));
+        }, totalTimeout * 1000)
+    );
+    return Promise.race([
+        handleRequestExec(request),
+        timeout
+    ]);
+}
+
 /** Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
  * @param request 
  * @returns icon file if success, otherwise redirect, if error redirect to default icon
  */
-async function handleRequest(request: Request): Promise<Response> {
+async function handleRequestExec(request: Request): Promise<Response> {
     let params;
     const defaultIconUrl = new URL(request.url).origin + "/default";
     try { // convert param
@@ -64,6 +80,7 @@ async function handleRequest(request: Request): Promise<Response> {
         console.error("Icon horse failed: " + error);
     }
     // If all attempts failed, redirect to google api.
-    console.error("All attempts failed, redirect to default icon.");
+    console.error("All fetchers failed, redirect to default icon.");
     return Response.redirect(defaultIconUrl, 307);
 }
+

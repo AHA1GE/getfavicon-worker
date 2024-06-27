@@ -1,6 +1,6 @@
 import { modifyHeaders } from "../utils";
 
-const totalTimeout = 2; // seconds
+const fetchFromPageTimeout = 2; // seconds
 
 /**
  * Fetches the first valid favicon from the list of URLs.
@@ -82,7 +82,7 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
 async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise<Response> {
     // race the fetch and the timeout
     const timeout = new Promise<Response>((_, reject) =>
-        setTimeout(() => reject(new Error('timed out in ' + totalTimeout + 's, aborted')), totalTimeout * 1000)
+        setTimeout(() => reject(new Error('timed out in ' + fetchFromPageTimeout + 's, aborted')), fetchFromPageTimeout * 1000)
     );
 
     return Promise.race([
