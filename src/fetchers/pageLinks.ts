@@ -1,4 +1,4 @@
-import { modifyHeaders, convert2webp } from "../utils";
+import { modifyHeaders, resWithNewHeaders } from "../utils";
 
 const fetchFromPageTimeout = 1.5; // seconds
 
@@ -8,12 +8,13 @@ const fetchFromPageTimeout = 1.5; // seconds
  * @returns The first valid favicon as Response.
  * @throws If no valid favicon is found.
  */
-async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> {
+async function fetchFaviconUrlList(targetSize: string, faviconUrlList: string[]): Promise<Response> {
+    const targetSizeNum = parseInt(targetSize, 10);
     const fetchPromises = faviconUrlList.map(async (url) => {
-        const response = await fetch(url);
+        const response = await fetch(new Request(url), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum } } });
         if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
             // const headers = await modifyHeaders(response.headers);
-            return convert2webp(response);
+            return resWithNewHeaders(response);
         } else {
             const error = new Error(`for: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`)
             console.warn(error);
@@ -70,7 +71,7 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
     const faviconIcoUrl = `${targetDomain}/favicon.ico`;
     faviconUrlList.push(faviconIcoUrl);
 
-    return fetchFaviconUrlList(faviconUrlList);
+    return fetchFaviconUrlList(targetSize, faviconUrlList);
 }
 
 /**

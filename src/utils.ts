@@ -126,25 +126,12 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
 }
 
 
-async function convert2webp(res: Response): Promise<Response> {
-    // use cf res options to convert image to webp
-    const options = {
-        cf: {
-            image: {
-                format: "webp",
-                height: 64,
-                width: 64
-            }
-        }
-    };
+async function resWithNewHeaders(res: Response): Promise<Response> {
     // set new headers
     const headers = await modifyHeaders(res.headers);
-
+    const newRes = new Response(res.body, { headers: headers, })
     // return new response with new headers and cf options
-    return new Response(res.body, {
-        headers: headers,
-        cf: options.cf
-    });
+    return newRes;
 }
 
-export { convertParam, defaultSvgicon, modifyHeaders, convert2webp };
+export { convertParam, defaultSvgicon, modifyHeaders, resWithNewHeaders };

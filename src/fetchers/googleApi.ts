@@ -1,4 +1,4 @@
-import { modifyHeaders, convert2webp } from "../utils";
+import { resWithNewHeaders } from "../utils";
 
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
@@ -19,7 +19,8 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
     try {
         // Fetch the favicon from Google's API.
         const googleApiUrl = constructGoogleApiUrl(targetSize, targetUrl);
-        const googleResponse = await fetch(googleApiUrl);
+        const targetSizeNum = parseInt(targetSize, 10);
+        const googleResponse = await fetch(new Request(googleApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum } } });
 
         if (googleResponse.ok) {
             const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
@@ -27,7 +28,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
                 // SUCCESS: Return the fetched icon.
                 // const iconData = await googleResponse.arrayBuffer();
                 // const headers = await modifyHeaders(await googleResponse.headers)
-                return convert2webp(googleResponse);
+                return resWithNewHeaders(googleResponse);
             } else {
                 throw new Error(`invalid Content-Type received: ${contentType}, url: ${googleApiUrl}`);
             }

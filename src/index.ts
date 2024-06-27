@@ -29,7 +29,10 @@ export default {
         // switch path
         if (url.pathname === "/default") {
             return defaultSvgicon();
-        } else {
+        } else if (url.pathname === "/favicon.ico") {
+            return defaultSvgicon();
+        }
+        else {
             return handleRequest(request);
         }
     },
@@ -81,7 +84,7 @@ async function handleRequestExec(request: Request): Promise<Response> {
         console.warn("Fetch from page failed: " + error);
     }
     try { // fetch icon use icon horse
-        return await fetchIconUseIconHorse(params.targetUrl);
+        return await fetchIconUseIconHorse(params.targetSize, params.targetUrl);
     } catch (error) {
         console.error("Icon horse failed: " + error);
     }
