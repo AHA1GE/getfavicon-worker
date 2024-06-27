@@ -2,17 +2,21 @@ import { resWithNewHeaders } from "../utils";
 
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
-        const googleApiBaseUrl = "https://t0.gstatic.com/faviconV2";
+        const googleApiBaseUrl = "https://t3.gstatic.com/faviconV2";
         const queryParams = new URLSearchParams({
-            client: 'chrome_desktop',
-            nfrp: '2',
-            check_seen: 'true',
-            size: targetSize,
+            // client: 'chrome_desktop',
+            // nfrp: '2',
+            // check_seen: 'true',
+            client: 'SOCIAL',
+            type: 'FAVICON',
             min_size: '16',
             max_size: '256',
+            'fallback_opts': 'TYPE,SIZE,URL',
+            size: '256',
             url: targetUrl.toString(),
         });
         const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
+        console.log(`googleApiUrl: ${googleApiUrl}`);
         return googleApiUrl
     }
 
