@@ -126,9 +126,10 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
     }
 }
 
-// use cf res options to convert image to webp
+
 async function convert2webp(res: Response): Promise<Response> {
-    let options = {
+    // use cf res options to convert image to webp
+    const options = {
         cf: {
             image: {
                 format: "webp",
@@ -137,7 +138,14 @@ async function convert2webp(res: Response): Promise<Response> {
             }
         }
     };
-    return new Response(res.body, options);
+    // set new headers
+    const headers = await modifyHeaders(res.headers);
+
+    // return new response with new headers and cf options
+    return new Response(res.body, {
+        headers: headers,
+        cf: options.cf
+    });
 }
 
 export { convertParam, defaultSvgicon, modifyHeaders, convert2webp };

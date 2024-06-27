@@ -25,9 +25,9 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
             if (contentType.startsWith("image/")) {
                 // SUCCESS: Return the fetched icon.
-                const iconData = await googleResponse.arrayBuffer();
-                const headers = await modifyHeaders(await googleResponse.headers)
-                return convert2webp(new Response(iconData, { headers }));
+                // const iconData = await googleResponse.arrayBuffer();
+                // const headers = await modifyHeaders(await googleResponse.headers)
+                return convert2webp(googleResponse);
             } else {
                 throw new Error(`invalid Content-Type received: ${contentType}, url: ${googleApiUrl}`);
             }

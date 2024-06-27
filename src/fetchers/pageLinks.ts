@@ -12,8 +12,8 @@ async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> 
     const fetchPromises = faviconUrlList.map(async (url) => {
         const response = await fetch(url);
         if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-            const headers = await modifyHeaders(response.headers);
-            return convert2webp(new Response(response.body, { headers }));
+            // const headers = await modifyHeaders(response.headers);
+            return convert2webp(response);
         } else {
             const error = new Error(`for: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`)
             console.warn(error);
