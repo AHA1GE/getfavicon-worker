@@ -1,4 +1,4 @@
-import { modifyHeaders } from "../utils";
+import { modifyHeaders, convert2webp } from "../utils";
 
 const fetchFromPageTimeout = 2; // seconds
 
@@ -13,7 +13,7 @@ async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> 
         const response = await fetch(url);
         if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
             const headers = await modifyHeaders(response.headers);
-            return new Response(response.body, { headers });
+            return convert2webp(new Response(response.body, { headers }));
         } else {
             const error = new Error(`for: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`)
             console.warn(error);

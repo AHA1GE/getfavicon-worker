@@ -1,4 +1,4 @@
-import { modifyHeaders } from "../utils";
+import { modifyHeaders, convert2webp } from "../utils";
 
 async function fetchIconUseIconHorse(targetUrl: URL) {
     const iconHorseApiBaseUrl = "https://icon.horse/icon/";
@@ -15,7 +15,7 @@ async function fetchIconUseIconHorse(targetUrl: URL) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await iconHorseResponse.arrayBuffer();
                 const headers = await modifyHeaders(await iconHorseResponse.headers)
-                return new Response(iconData, { headers });
+                return convert2webp(new Response(iconData, { headers }));
             } else {
                 throw new Error(`invalid Content-Type: ${contentType}, url: ${iconHorseApiUrl}`);
             }

@@ -1,4 +1,4 @@
-import { modifyHeaders } from "../utils";
+import { modifyHeaders, convert2webp } from "../utils";
 
 async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promise<Response> {
     function constructGoogleApiUrl(targetSize: string, targetUrl: URL): string {
@@ -27,7 +27,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
                 // SUCCESS: Return the fetched icon.
                 const iconData = await googleResponse.arrayBuffer();
                 const headers = await modifyHeaders(await googleResponse.headers)
-                return new Response(iconData, { headers });
+                return convert2webp(new Response(iconData, { headers }));
             } else {
                 throw new Error(`invalid Content-Type received: ${contentType}, url: ${googleApiUrl}`);
             }
