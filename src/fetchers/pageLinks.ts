@@ -9,23 +9,22 @@ const totalTimeout = 2; // seconds
  * @throws If no valid favicon is found.
  */
 async function fetchFaviconUrlList(faviconUrlList: string[]): Promise<Response> {
-    const fetchPromises = faviconUrlList.map(url =>
-        fetch(url).then(response => {
-            if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-                modifyHeaders(response.headers).then(headers => { return new Response(response.body, { headers }); });
-            }
-            console.warn(`Fetch failed: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`);
-            throw new Error(`Invalid image or fetch failed for URL: ${url}`);
-        }).catch(error => {
-            console.error(`Error fetching favicon from ${url}: ${error.message}`);
+    const fetchPromises = faviconUrlList.map(async (url) => {
+        const response = await fetch(url);
+        if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
+            const headers = await modifyHeaders(response.headers);
+            return new Response(response.body, { headers });
+        } else {
+            const error = new Error(`for: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`)
+            console.warn(error);
             throw error;
-        })
-    );
+        }
+    });
 
     try {
         const firstValidImage = await Promise.any(fetchPromises);
         return firstValidImage;
-    } catch (error) {
+    } catch {
         throw new Error("No valid favicon found, all fetches failed");
     }
 }
@@ -41,9 +40,9 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
     // Fetch the target page and extract the favicon URL.
     const responsePage = await fetch(targetUrl.toString(), { redirect: "follow" });
     if (!responsePage.ok) {
-        throw new Error(`Failed to fetch target page, status: ${responsePage.status}`);
+        throw new Error(`target page status: ${responsePage.status}`);
     } else if (!responsePage.headers.get("Content-Type")?.startsWith("text/html")) {
-        throw new Error(`Target page is not an HTML document, type: ${responsePage.headers.get("Content-Type") || "unknown"}`);
+        throw new Error(`target page is not an HTML document, type: ${responsePage.headers.get("Content-Type") || "unknown"}`);
     }
 
     // Parse the response as HTML.
@@ -63,8 +62,7 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
     }
 
     if (faviconUrlList.length === 0) {
-        console.warn(`No favicon link found, the page text 0-200: ${html.slice(0, 200)}`);
-        throw new Error(`No favicon link found on page ${targetUrl}`);
+        throw new Error(`no favicon link foundon page ${targetUrl}, the page text 0-200: ${html.slice(0, 200)}`);
     }
 
     // Add the default favicon URL to the list
@@ -84,7 +82,7 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
 async function fetchFaviconFromPage(targetSize: string, targetUrl: URL): Promise<Response> {
     // race the fetch and the timeout
     const timeout = new Promise<Response>((_, reject) =>
-        setTimeout(() => reject(new Error('Fetch favicon from page timedout in ' + totalTimeout + 's, aborted')), totalTimeout * 1000)
+        setTimeout(() => reject(new Error('timed out in ' + totalTimeout + 's, aborted')), totalTimeout * 1000)
     );
 
     return Promise.race([

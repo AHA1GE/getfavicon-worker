@@ -44,24 +44,24 @@ async function handleRequest(request: Request): Promise<Response> {
     try { // convert param
         params = await convertParam(new URL(request.url));
     } catch (error) {
-        console.error("param error: " + error);
+        console.error("Param error: " + error);
         // If the parameters are invalid, redirect to the default icon.
         return Response.redirect(defaultIconUrl, 307);
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
     } catch (error) {
-        console.warn("fetch Icon Use Google Api failed: " + error);
+        console.warn("Google api failed: " + error);
     }
     try { // fetch favicon from page
         return await fetchFaviconFromPage(params.targetSize, params.targetUrl);
     } catch (error) {
-        console.warn("fetch Favicon From Page failed: " + error);
+        console.warn("Fetch from page failed: " + error);
     }
     try { // fetch icon use icon horse
         return await fetchIconUseIconHorse(params.targetUrl);
     } catch (error) {
-        console.error("fetch Icon Use Icon Horse failed: " + error);
+        console.error("Icon horse failed: " + error);
     }
     // If all attempts failed, redirect to google api.
     console.error("All attempts failed, redirect to default icon.");

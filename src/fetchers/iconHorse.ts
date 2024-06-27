@@ -15,16 +15,12 @@ async function fetchIconUseIconHorse(targetUrl: URL) {
                 // SUCCESS: Return the fetched icon.
                 const iconData = await iconHorseResponse.arrayBuffer();
                 const headers = await modifyHeaders(await iconHorseResponse.headers)
-                // set cache polocies
-                headers.set("Cache-Control", "public, max-age=604800, immutable");
                 return new Response(iconData, { headers });
             } else {
-                // ERROR: Log the error for debugging purposes
-                // console.error(`Invalid Content-Type received for favicon: ${contentType}`);
-                throw new Error(`Invalid Content-Type received for favicon: ${contentType}`);
+                throw new Error(`invalid Content-Type: ${contentType}, url: ${iconHorseApiUrl}`);
             }
         } else {
-            throw new Error(`Failed to fetch icon from icon.horse, status: ${iconHorseResponse.status}`);
+            throw new Error(`status: ${iconHorseResponse.status}, url: ${iconHorseApiUrl}`);
         }
     } catch (e) {
         throw new Error(e as string);
