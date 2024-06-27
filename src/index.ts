@@ -3,6 +3,8 @@ import { fetchIconUseGoogleApi } from "./fetchers/googleApi";
 import { fetchIconUseIconHorse } from "./fetchers/iconHorse";
 import { fetchFaviconFromPage } from "./fetchers/pageLinks";
 
+const totalTimeout = 3; // seconds
+
 export interface Env {
     // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
     // MY_KV_NAMESPACE: KVNamespace;
@@ -34,14 +36,19 @@ export default {
 
 };
 
-const totalTimeout = 3; // seconds
+async function redirect2DefaultIcon(request: Request): Promise<Response> {
+    const host = new URL(request.url).origin;
+    // since redirect is fallback, use 307
+    return Response.redirect(host + '/default', 307)
+}
+
+
 
 async function handleRequest(request: Request): Promise<Response> {
-    const defaultIconUrl = new URL(request.url).origin + "/default";
     const timeout = new Promise<Response>((resolve) =>
         setTimeout(() => {
-            console.log(`Redirecting to default icon due to timeout of ${totalTimeout} seconds.`);
-            resolve(Response.redirect(defaultIconUrl));
+            console.log(`timeout of ${totalTimeout} seconds, redirect to default icon.`);
+            resolve(redirect2DefaultIcon(request));
         }, totalTimeout * 1000)
     );
     return Promise.race([
@@ -56,13 +63,12 @@ async function handleRequest(request: Request): Promise<Response> {
  */
 async function handleRequestExec(request: Request): Promise<Response> {
     let params;
-    const defaultIconUrl = new URL(request.url).origin + "/default";
     try { // convert param
         params = await convertParam(new URL(request.url));
     } catch (error) {
         console.error("Param error: " + error);
         // If the parameters are invalid, redirect to the default icon.
-        return Response.redirect(defaultIconUrl, 307);
+        return redirect2DefaultIcon(request);
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
@@ -81,6 +87,6 @@ async function handleRequestExec(request: Request): Promise<Response> {
     }
     // If all attempts failed, redirect to google api.
     console.error("All fetchers failed, redirect to default icon.");
-    return Response.redirect(defaultIconUrl, 307);
+    return redirect2DefaultIcon(request);
 }
 

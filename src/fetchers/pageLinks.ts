@@ -1,6 +1,6 @@
 import { modifyHeaders, convert2webp } from "../utils";
 
-const fetchFromPageTimeout = 2; // seconds
+const fetchFromPageTimeout = 1.5; // seconds
 
 /**
  * Fetches the first valid favicon from the list of URLs.
