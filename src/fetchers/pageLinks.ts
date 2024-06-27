@@ -11,7 +11,7 @@ const fetchFromPageTimeout = 1.5; // seconds
 async function fetchFaviconUrlList(targetSize: string, faviconUrlList: string[]): Promise<Response> {
     const targetSizeNum = parseInt(targetSize, 10);
     const fetchPromises = faviconUrlList.map(async (url) => {
-        const response = await fetch(new Request(url), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum } } });
+        const response = await fetch(new Request(url), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });
         if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
             // const headers = await modifyHeaders(response.headers);
             return resWithNewHeaders(response);

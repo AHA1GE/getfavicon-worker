@@ -9,7 +9,7 @@ async function fetchIconUseIconHorse(targetSize: string, targetUrl: URL) {
     const iconHorseApiUrl = `${iconHorseApiBaseUrl}?${queryParams}`;
     try {
         const targetSizeNum = parseInt(targetSize, 10);
-        const iconHorseResponse = await fetch((iconHorseApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum } } });
+        const iconHorseResponse = await fetch((iconHorseApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });
         if (iconHorseResponse.ok) {
             const contentType = iconHorseResponse.headers.get("Content-Type") || "image/x-icon";
             if (contentType.startsWith("image/")) {

@@ -16,7 +16,6 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             url: targetUrl.toString(),
         });
         const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
-        // console.log(`googleApiUrl: ${googleApiUrl}`);
         return googleApiUrl
     }
 
@@ -24,7 +23,8 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
         // Fetch the favicon from Google's API.
         const googleApiUrl = constructGoogleApiUrl(targetSize, targetUrl);
         const targetSizeNum = parseInt(targetSize, 10);
-        const googleResponse = await fetch(new Request(googleApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum } } });
+        console.log(`fetching icon from google api: ${googleApiUrl}, converting to ${targetSizeNum}x${targetSizeNum}...`);
+        const googleResponse = await fetch(new Request(googleApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });
 
         if (googleResponse.ok) {
             const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
