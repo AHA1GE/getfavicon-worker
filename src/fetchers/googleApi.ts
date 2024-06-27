@@ -16,7 +16,7 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
             url: targetUrl.toString(),
         });
         const googleApiUrl = `${googleApiBaseUrl}?${queryParams}`;
-        console.log(`googleApiUrl: ${googleApiUrl}`);
+        // console.log(`googleApiUrl: ${googleApiUrl}`);
         return googleApiUrl
     }
 
