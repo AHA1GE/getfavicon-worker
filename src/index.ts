@@ -53,7 +53,7 @@ async function redirect2DefaultIcon(request: Request): Promise<Response> {
 async function handleRequest(request: Request, env: Env): Promise<Response> {
     const timeout = new Promise<Response>((resolve) =>
         setTimeout(() => {
-            console.log(`timeout of ${totalTimeout} seconds, redirect to default icon.`);
+            console.error(`timeout of ${totalTimeout} seconds, redirect to default icon.`);
             resolve(redirect2DefaultIcon(request));
         }, totalTimeout * 1000)
     );
@@ -79,7 +79,7 @@ async function handleRequestExec(request: Request, env: Env): Promise<Response> 
     try { // fetch icon from static binding
         return await fetchIconBasedOnEnvVar(params.targetSize, params.targetUrl, env);
     } catch (error) {
-        console.warn("Warn: " + error + "continue to next fetcher.");
+        console.warn("Warn: " + error + " Continue to next fetcher.");
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);

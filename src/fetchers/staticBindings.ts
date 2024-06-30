@@ -6,11 +6,9 @@ async function fetchIconBasedOnEnvVar(targetSize: string, targetUrl: URL, env: E
     // bindinds = { "matchtargeturl.com" : "https://fetch.from.here/favicon.ico", "anothermatch.com": "https://fetch.from.here/favicon.ico}
     // if domain matches, fetch the icon from the binding's value, otherwise no match, reject the promise with "no static favicon binding matched"
 
-    console.log('matching bindings');
-    console.log(bindings);
     const matchedUrl = bindings[targetUrl.hostname] || false;
 
-    if (!matchedUrl) { return Promise.reject("no static favicon binding matched"); }
+    if (!matchedUrl) { return Promise.reject("no static favicon binding matched."); }
 
     const newTargetUrl = new URL(matchedUrl);
     console.log(`fetching icon from static binding: {'${targetUrl.hostname}':'${newTargetUrl}'}, converting to ${targetSize}x${targetSize}...`);
