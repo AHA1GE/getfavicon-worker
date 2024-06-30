@@ -1,4 +1,4 @@
-import { modifyHeaders, resWithNewHeaders } from "../utils";
+import { resWithNewHeaders } from "../utils";
 
 async function fetchIconUseIconHorse(targetSize: string, targetUrl: URL) {
     const iconHorseApiBaseUrl = "https://icon.horse/icon/";

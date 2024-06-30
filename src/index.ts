@@ -1,4 +1,6 @@
 import { convertParam, defaultSvgicon } from "./utils";
+
+import { fetchIconBasedOnEnvVar } from "./fetchers/staticBindings";
 import { fetchIconUseGoogleApi } from "./fetchers/googleApi";
 import { fetchIconUseIconHorse } from "./fetchers/iconHorse";
 import { fetchFaviconFromPage } from "./fetchers/pageLinks";
@@ -20,6 +22,7 @@ export interface Env {
     //
     // Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
     // MY_QUEUE: Queue;
+    staticFaviconBindings: { [key: string]: string };
 }
 
 export default {
@@ -33,7 +36,7 @@ export default {
             return defaultSvgicon();
         }
         else {
-            return handleRequest(request);
+            return handleRequest(request, env);
         }
     },
 
@@ -47,7 +50,7 @@ async function redirect2DefaultIcon(request: Request): Promise<Response> {
 
 
 
-async function handleRequest(request: Request): Promise<Response> {
+async function handleRequest(request: Request, env: Env): Promise<Response> {
     const timeout = new Promise<Response>((resolve) =>
         setTimeout(() => {
             console.log(`timeout of ${totalTimeout} seconds, redirect to default icon.`);
@@ -55,7 +58,7 @@ async function handleRequest(request: Request): Promise<Response> {
         }, totalTimeout * 1000)
     );
     return Promise.race([
-        handleRequestExec(request),
+        handleRequestExec(request, env),
         timeout
     ]);
 }
@@ -64,7 +67,7 @@ async function handleRequest(request: Request): Promise<Response> {
  * @param request 
  * @returns icon file if success, otherwise redirect, if error redirect to default icon
  */
-async function handleRequestExec(request: Request): Promise<Response> {
+async function handleRequestExec(request: Request, env: Env): Promise<Response> {
     let params;
     try { // convert param
         params = await convertParam(new URL(request.url));
@@ -72,6 +75,11 @@ async function handleRequestExec(request: Request): Promise<Response> {
         console.error("Param error: " + error);
         // If the parameters are invalid, redirect to the default icon.
         return redirect2DefaultIcon(request);
+    }
+    try { // fetch icon from static binding
+        return await fetchIconBasedOnEnvVar(params.targetSize, params.targetUrl, env);
+    } catch (error) {
+        console.warn("Warn: " + error + "continue to next fetcher.");
     }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);

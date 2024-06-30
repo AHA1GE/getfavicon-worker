@@ -1,4 +1,4 @@
-import { modifyHeaders, resWithNewHeaders } from "../utils";
+import { resWithNewHeaders } from "../utils";
 
 const fetchFromPageTimeout = 1.5; // seconds
 
