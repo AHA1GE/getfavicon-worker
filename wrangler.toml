@@ -7,6 +7,9 @@ compatibility_date = "2023-12-06"
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
 [env.staging.vars]
 staticFaviconBindings = { 'example.com' = 'https://example.com/favicon.ico' }
+[env.production.vars]
+staticFaviconBindings = { 'ddns466c.ahaigege.com' = 'https://www.qnap.com/i/images/favicon/favicon.png', 'ddns532x.ahaigege.com' = 'https://www.qnap.com/i/images/favicon/favicon.png', 'ts466c.ahaigege.com' = 'https://i.postimg.cc/5ym1kjVn/ts466c-jpg.jpg', 'ts532x.ahaigege.com' = 'https://i.postimg.cc/MpC4VqkT/ts532x-jpg.jpg' }
+
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv
