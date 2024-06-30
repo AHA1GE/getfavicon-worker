@@ -6,7 +6,7 @@ compatibility_date = "2023-12-06"
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
 [env.staging.vars]
-staticFaviconBindings = { "example.com" = "https://example.com/favicon.ico" }
+staticFaviconBindings = { 'example.com' = 'https://example.com/favicon.ico' }
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv
