@@ -6,7 +6,7 @@ compatibility_date = "2023-12-06"
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
 [vars]
-staticFaviconBindings = { "ddns466c.ahaigege.com" = "https://i.postimg.cc/5ym1kjVn/ts466c-jpg.jpg", "ddns532x.ahaigege.com" = "https://i.postimg.cc/MpC4VqkT/ts532x-jpg.jpg", "ts466c.ahaigege.com" = "https://i.postimg.cc/DwrtGbTB/qnap-qts-logo.jpg", "ts532x.ahaigege.com" = "https://i.postimg.cc/DwrtGbTB/qnap-qts-logo.jpg", "nextcloud.dofor.fun" = "https://i.postimg.cc/DZBFMt4c/nextcloud-dofor-fun.jpg", "sf.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg", "seafile.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg", "goseafile.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg" }
+staticFaviconBindings = { "apps.dofor.fun" = "https://i.postimg.cc/2S1pPCNQ/cloudflare.png", "ddns466c.ahaigege.com" = "https://i.postimg.cc/5ym1kjVn/ts466c-jpg.jpg", "ddns532x.ahaigege.com" = "https://i.postimg.cc/MpC4VqkT/ts532x-jpg.jpg", "ts466c.ahaigege.com" = "https://i.postimg.cc/DwrtGbTB/qnap-qts-logo.jpg", "ts532x.ahaigege.com" = "https://i.postimg.cc/DwrtGbTB/qnap-qts-logo.jpg", "nextcloud.dofor.fun" = "https://i.postimg.cc/DZBFMt4c/nextcloud-dofor-fun.jpg", "sf.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg", "seafile.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg", "goseafile.dofor.fun" = "https://i.postimg.cc/Bv359QkR/seafile.jpg" }
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv
