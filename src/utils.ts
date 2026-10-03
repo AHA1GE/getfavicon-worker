@@ -103,6 +103,7 @@ async function defaultSvgicon() {
     const headers = new Headers();
     headers.set("Content-Type", "image/svg+xml");
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    headers.set("Access-Control-Allow-Origin", "*");
 
     return new Response(svgContent, {
         headers: headers,
@@ -115,6 +116,8 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
         const newHeaders = new Headers(headers);
         // set cache polocies
         newHeaders.set("Cache-Control", "public, max-age=31536000, immutable");
+        // allow pages to read icon pixels (e.g. to detect dark icons on dark backgrounds)
+        newHeaders.set("Access-Control-Allow-Origin", "*");
         // remove unneeded http(html) headers: Content-Security-Policy, X-Content-Security-Policy, X-UA-Compatible, X-WebKit-CSP, X-XSS-Protection
         newHeaders.delete("Content-Security-Policy");
         newHeaders.delete("X-Content-Security-Policy");
