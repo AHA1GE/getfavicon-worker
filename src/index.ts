@@ -5,7 +5,7 @@ import { fetchIconUseGoogleApi } from "./fetchers/googleApi";
 import { fetchIconUseIconHorse } from "./fetchers/iconHorse";
 import { fetchFaviconFromPage } from "./fetchers/pageLinks";
 
-const totalTimeout = 3; // seconds
+const totalTimeout = 3.5; // seconds
 
 export interface Env {
     // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
@@ -63,8 +63,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     ]);
 }
 
-/** Fetches the favicon for a given URL and size, using Google's favicon API first, if error try the page's HTML.
- * @param request 
+/** Fetches the favicon for a given URL and size, trying static bindings first, then the page's own HTML icons,
+ * then Google's favicon API and finally icon.horse.
+ * @param request
  * @returns icon file if success, otherwise redirect, if error redirect to default icon
  */
 async function handleRequestExec(request: Request, env: Env): Promise<Response> {
@@ -81,15 +82,15 @@ async function handleRequestExec(request: Request, env: Env): Promise<Response> 
     } catch (error) {
         console.warn("Warn: " + error + " Continue to next fetcher.");
     }
+    try { // fetch favicon from page (the site's own icons are usually higher quality than google's cache)
+        return await fetchFaviconFromPage(params.targetSize, params.targetUrl);
+    } catch (error) {
+        console.warn("Fetch from page failed: " + error);
+    }
     try { // fetch icon use google api
         return await fetchIconUseGoogleApi(params.targetSize, params.targetUrl);
     } catch (error) {
         console.warn("Google api failed: " + error);
-    }
-    try { // fetch favicon from page
-        return await fetchFaviconFromPage(params.targetSize, params.targetUrl);
-    } catch (error) {
-        console.warn("Fetch from page failed: " + error);
     }
     try { // fetch icon use icon horse
         return await fetchIconUseIconHorse(params.targetSize, params.targetUrl);

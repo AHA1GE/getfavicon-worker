@@ -123,9 +123,6 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
         newHeaders.delete("X-XSS-Protection");
         // remove expires header since cache-control is set
         newHeaders.delete("Expires");
-        // always return webp image, so set content type to image/webp
-        newHeaders.delete("Content-Type");
-        newHeaders.set("Content-Type", "image/webp");
         return newHeaders;
     } catch (e) {
         throw e;
@@ -133,12 +130,50 @@ async function modifyHeaders(headers: Headers): Promise<Headers> {
 }
 
 
-async function resWithNewHeaders(res: Response): Promise<Response> {
+async function resWithNewHeaders(res: Response, contentType: string): Promise<Response> {
     // set new headers
     const headers = await modifyHeaders(res.headers);
+    headers.set("Content-Type", contentType);
     const newRes = new Response(res.body, { headers: headers, })
     // return new response with new headers and cf options
     return newRes;
 }
 
-export { convertParam, defaultSvgicon, modifyHeaders, resWithNewHeaders };
+/**
+ * Fetches an icon url and converts it to webp of the requested size.
+ * Image Resizing passes SVG through unconverted and cannot process .ico sources at all,
+ * so those are served as the original bytes with their true content type.
+ * @param url The icon url to fetch.
+ * @param sizeNum The desired width/height.
+ * @returns The icon response.
+ * @throws If no valid image can be fetched.
+ */
+async function fetchIcon(url: string, sizeNum: number): Promise<Response> {
+    try {
+        const res = await fetch(new Request(url), { cf: { image: { format: "webp", height: sizeNum, width: sizeNum, fit: "contain" } } });
+        if (!res.ok) {
+            throw new Error(`status: ${res.status}, url ${url}`);
+        }
+        const contentType = res.headers.get("Content-Type") || "";
+        if (!contentType.startsWith("image/")) {
+            throw new Error(`invalid content-type: ${contentType}, url ${url}`);
+        }
+        if (contentType.startsWith("image/svg")) {
+            return resWithNewHeaders(res, "image/svg+xml");
+        }
+        return resWithNewHeaders(res, "image/webp");
+    } catch (e) {
+        // retry without resizing so sources Image Resizing rejects (e.g. .ico) still work
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`status: ${res.status}, url ${url}`);
+        }
+        const contentType = res.headers.get("Content-Type") || "";
+        if (!contentType.startsWith("image/")) {
+            throw new Error(`invalid content-type: ${contentType}, url ${url}`);
+        }
+        return resWithNewHeaders(res, contentType);
+    }
+}
+
+export { convertParam, defaultSvgicon, modifyHeaders, resWithNewHeaders, fetchIcon };

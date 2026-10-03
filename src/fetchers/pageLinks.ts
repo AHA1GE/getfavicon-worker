@@ -1,6 +1,6 @@
-import { resWithNewHeaders } from "../utils";
+import { fetchIcon, resWithNewHeaders } from "../utils";
 
-const fetchFromPageTimeout = 1.5; // seconds
+const fetchFromPageTimeout = 2.2; // seconds
 
 /**
  * Fetches the first valid favicon from the list of URLs.
@@ -11,15 +11,7 @@ const fetchFromPageTimeout = 1.5; // seconds
 async function fetchFaviconUrlList(targetSize: string, faviconUrlList: string[]): Promise<Response> {
     const targetSizeNum = parseInt(targetSize, 10);
     const fetchPromises = faviconUrlList.map(async (url) => {
-        const response = await fetch(new Request(url), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });
-        if (response.ok && response.headers.get("Content-Type")?.startsWith("image/")) {
-            // const headers = await modifyHeaders(response.headers);
-            return resWithNewHeaders(response);
-        } else {
-            const error = new Error(`for: '${url}', status: ${response.status}, content-type: ${response.headers.get("Content-Type") || "unknown"}`)
-            console.warn(error);
-            throw error;
-        }
+        return fetchIcon(url, targetSizeNum);
     });
 
     try {
@@ -52,26 +44,28 @@ async function fetchFaviconFromPageExec(targetSize: string, targetUrl: URL): Pro
     // Look for favicon links in the HTML.
     const linkRegex = /<link\s+(?:[^>]*?\s+)?rel=["'](icon|shortcut icon|apple-touch-icon|apple-touch-icon-precomposed|apple-touch-startup-image)["'][^>]*?>/gi;
     let match;
-    const faviconUrlList: string[] = [];
+    const declaredUrlList: string[] = [];
+    const appleTouchUrlList: string[] = [];
     while ((match = linkRegex.exec(html)) !== null) {
         const hrefRegex = /href=["']([^"']+)["']/i;
         const hrefMatch = hrefRegex.exec(match[0]);
         if (hrefMatch && hrefMatch[1]) {
             const faviconUrl = new URL(hrefMatch[1], targetUrl).toString();
-            faviconUrlList.push(faviconUrl);
+            // apple-touch-icon is usually the highest resolution source, prefer it
+            if (/apple-touch/.test(match[1])) {
+                appleTouchUrlList.push(faviconUrl);
+            } else {
+                declaredUrlList.push(faviconUrl);
+            }
         }
     }
 
-    if (faviconUrlList.length === 0) {
-        throw new Error(`no favicon link foundon page ${targetUrl}, the page text 0-200: ${html.slice(0, 200)}`);
+    try {
+        return await fetchFaviconUrlList(targetSize, [...appleTouchUrlList, ...declaredUrlList]);
+    } catch (e) {
+        // last resort: the conventional /favicon.ico
+        return fetchFaviconUrlList(targetSize, [`${targetUrl.origin}/favicon.ico`]);
     }
-
-    // Add the default favicon URL to the list
-    const targetDomain = targetUrl.origin;
-    const faviconIcoUrl = `${targetDomain}/favicon.ico`;
-    faviconUrlList.push(faviconIcoUrl);
-
-    return fetchFaviconUrlList(targetSize, faviconUrlList);
 }
 
 /**
