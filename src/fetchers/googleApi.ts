@@ -26,31 +26,18 @@ async function fetchIconUseGoogleApi(targetSize: string, targetUrl: URL): Promis
         console.log(`fetching icon from google api: ${googleApiUrl}, converting to ${targetSizeNum}x${targetSizeNum}...`);
         const googleResponse = await fetch(new Request(googleApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });
 
-        if (googleResponse.ok) {
-            const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
-            if (contentType.startsWith("image/")) {
-                // SUCCESS: Return the fetched icon.
-                // const iconData = await googleResponse.arrayBuffer();
-                // const headers = await modifyHeaders(await googleResponse.headers)
-                return resWithNewHeaders(googleResponse);
-            } else {
-                throw new Error(`invalid Content-Type received: ${contentType}, url: ${googleApiUrl}`);
-            }
-        } else {
-            if (googleResponse.status === 404) {
-                throw 404;
-            } else {
-                throw new Error(`status: ${googleResponse.status}, url ${googleApiUrl}`);
-            }
-
+        if (!googleResponse.ok) {
+            throw new Error(`status: ${googleResponse.status}, url ${googleApiUrl}`);
         }
+        const contentType = googleResponse.headers.get("Content-Type") || "image/x-icon";
+        if (!contentType.startsWith("image/")) {
+            throw new Error(`invalid Content-Type received: ${contentType}, url: ${googleApiUrl}`);
+        }
+        // SUCCESS: Return the fetched icon.
+        return resWithNewHeaders(googleResponse);
     } catch (e) {
-        if (e === 404) {
-            throw new Error(`ststus 404. Continue to fetch from page.`);
-        } else {
-            console.log(`${e}, misc issue, 307 redirect to google api should allow client see the icon.`);
-            return new Response(constructGoogleApiUrl(targetSize, targetUrl), { status: 307 })
-        }
+        // rethrow so the page / icon horse fetchers still get a chance to run
+        throw new Error(`google api failed: ${e}`);
     }
 }
 

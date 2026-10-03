@@ -1,12 +1,9 @@
 import { resWithNewHeaders } from "../utils";
 
 async function fetchIconUseIconHorse(targetSize: string, targetUrl: URL) {
+    // icon.horse only accepts the path form /icon/<domain>; the ?uri= query form returns 400
     const iconHorseApiBaseUrl = "https://icon.horse/icon/";
-    const queryParams = new URLSearchParams({
-        // size: targetSize,
-        uri: targetUrl.toString(),
-    });
-    const iconHorseApiUrl = `${iconHorseApiBaseUrl}?${queryParams}`;
+    const iconHorseApiUrl = `${iconHorseApiBaseUrl}${targetUrl.hostname}`;
     try {
         const targetSizeNum = parseInt(targetSize, 10);
         const iconHorseResponse = await fetch((iconHorseApiUrl), { cf: { image: { format: "webp", height: targetSizeNum, width: targetSizeNum, fit: "contain" } } });

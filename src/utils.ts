@@ -11,9 +11,9 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
         let sizeFromPath;
 
         if (path[0] === "url") {
-            // url first, set url index to 1
+            // url first, size (if present) must follow a sz/size keyword
             urlFromPath = path[1];
-            sizeFromPath = path[3] || "32";
+            sizeFromPath = (path[2] === "sz" || path[2] === "size") ? (path[3] || "32") : "32";
         } else if ((path[0] === "sz") || (path[0] === "size")) {
             // size first, set size index to 1
             sizeFromPath = path[1];
@@ -25,7 +25,15 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
             throw new Error('Missing "url" parameter from path');
         }
 
-        const { targetSize, targetUrl } = processParams(sizeFromPath, urlFromPath);
+        // pathname is not auto-decoded, so the target url must be decoded here
+        let decodedUrlFromPath;
+        try {
+            decodedUrlFromPath = decodeURIComponent(urlFromPath);
+        } catch (e) {
+            throw new Error('Invalid "url" parameter');
+        }
+
+        const { targetSize, targetUrl } = processParams(sizeFromPath, decodedUrlFromPath);
 
         return { extractedSize: targetSize, extractedUrl: targetUrl };
     }
@@ -34,19 +42,16 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
         const sizeFromQuery = url.searchParams.get("sz")?.trim() || url.searchParams.get("size")?.trim() || "32";
         const urlFromQuery = url.searchParams.get("url")?.trim() || "";
 
+        // searchParams.get() already decodes once; decoding again would break urls containing literal '%'
         const { targetSize, targetUrl } = processParams(sizeFromQuery, urlFromQuery);
 
         return { extractedSize: targetSize, extractedUrl: targetUrl };
     }
     // Tool func 3
     function processParams(sizeString: string, urlString: string): { targetSize: string; targetUrl: URL } {
-        let size = sizeString;
-        const numericSize = parseInt(size, 10);
-        if (isNaN(numericSize) || numericSize <= 0) {
-            size = "32";
-        } else {
-            size = numericSize.toString();
-        }
+        // clamp size so Cloudflare Image Resizing never rejects oversized requests
+        const numericSize = parseInt(sizeString, 10);
+        const size = (isNaN(numericSize) || numericSize <= 0) ? "32" : Math.min(numericSize, 1024).toString();
 
         if (!urlString) {
             throw new Error('Missing or empty "url" parameter');
@@ -54,10 +59,14 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
 
         let urlObj;
         try {
-            // console.log(`Decoding URL: ${urlString}`);
-            urlObj = new URL(decodeURIComponent(urlString));
+            urlObj = new URL(urlString);
         } catch (e) {
-            throw new Error('Invalid "url" parameter');
+            try {
+                // accept bare hosts like "example.com"
+                urlObj = new URL("https://" + urlString);
+            } catch (e2) {
+                throw new Error('Invalid "url" parameter');
+            }
         }
 
         return { targetSize: size, targetUrl: urlObj };
@@ -66,14 +75,14 @@ async function convertParam(url: URL): Promise<{ targetSize: string; targetUrl: 
     let targetSize: string;
     let targetUrl: URL;
 
-    if (url.search === "") {
-        // Extract parameters from path
-        const { extractedSize, extractedUrl } = extractParamsFromPath(url);
+    if (url.searchParams.has("url")) {
+        // Extract parameters from query parameters
+        const { extractedSize, extractedUrl } = extractParamsFromQuery(url);
         targetSize = extractedSize;
         targetUrl = extractedUrl;
     } else {
-        // Extract parameters from query parameters
-        const { extractedSize, extractedUrl } = extractParamsFromQuery(url);
+        // Extract parameters from path
+        const { extractedSize, extractedUrl } = extractParamsFromPath(url);
         targetSize = extractedSize;
         targetUrl = extractedUrl;
     }
